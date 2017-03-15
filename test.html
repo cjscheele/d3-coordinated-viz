@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<head>
+    
+    <meta charset="utf-8">
+    <script src = "https://feyderm.github.io/d3/d3.js"></script>
+    <script src = "https://feyderm.github.io/d3/hexbin/hexbin.js"></script> 
+    <script src = "https://feyderm.github.io/js/viridis_colors.js"></script> 
+
+</head>
+<body>
+
+    <div id="block"></div>
+
+    <script>
+
+        var h = 700; 
+        var w = 700;
+        
+        var projection = d3.geo.mercator()
+                           .center([-76.612223, 39.294504])
+                           .scale([150000])
+                           .translate([310, 290]);
+
+        var svg = d3.select("#block")
+                    .append("svg")
+                    .attr("height", h)
+                    .attr("width", w);
+
+        var path = d3.geo.path()
+                     .projection(projection);
+
+        var hexbin = d3.hexbin()
+                       .size([w, h])
+                       .radius(3.5);
+
+        // first of two scales for linear fill; ref [1]
+        var fill_scale1 = d3.scale.linear()
+                            .domain(d3.range(0, 1, 1.0 / (viridis_colors.length - 1)))
+                            .range(viridis_colors);
+
+        var basemap = svg.append("g");
+
+        var hex = svg.append("g").attr("clip-path", "url(#map_clip)");
+
+        // load map; ref [2] 
+        var map = d3.json("https://feyderm.github.io/data/Baltimore_vacant_buildings_Shape.geojson", function(json) {
+
+            // clippling mask for hexbin plot
+            var dims = path.bounds(json);
+            var clip_w = dims[1][0] - dims[0][0];
+            var clip_h = dims[1][1] - dims[0][1];
+
+            svg.append("clipPath")
+               .attr("id", "map_clip")
+               .append("rect")
+               .attr("width", clip_w)
+               .attr("height", 700)
+               .attr("transform", function() {
+                   return "translate(" + 50 + "," + 29 +  ")";
+               });
+           
+            // basemap for hexbin plot
+            basemap.selectAll("path")
+                   .data(json.features)
+                   .enter()
+                   .append("path")
+                   .attr("d", path) 
+                   .attr("stroke", "grey")
+                   .attr("fill", "#595959");
+        });
+
+        var vacancy = d3.csv("https://feyderm.github.io/data/Baltimore_vacant_buildings.csv", function(data) {
+                       
+            var points = [];
+
+            data.forEach(function(d) {
+
+                // convert lat/lng string to numeric
+                d.latitude = +d.latitude;
+                d.longitude = +d.longitude;
+
+                // projections
+                var x = projection([d.latitude, d.longitude])[0];
+                var y = projection([d.latitude, d.longitude])[1];
+
+                points.push([x, y]);
+
+            });
+
+            // bin lat/lng
+            var bins = hexbin(points);
+
+            // points per hexbin
+            var bins_n = [];  
+
+            bins.forEach(function(d) {
+                bins_n.push(d.length); 
+            });
+
+            // second of two scales for linear fill color
+            var extent = d3.extent(bins_n);
+
+            var fill_scale2 = d3.scale.linear()
+                                .domain([extent[0], extent[1]])
+                                .range([0,1]);
+
+            hex.selectAll(".hexagon")
+               .data(hexbin(points)) 
+               .enter()
+               .append("path")
+               .attr("class", "hexagon")
+               .attr("d", hexbin.hexagon())
+               .attr("transform", function(d) { 
+                       return "translate(" + d.x + "," + d.y + ")"; 
+               })
+               .style("fill", function(d) {
+                       return fill_scale1(fill_scale2(d.length));
+               });
+       });
+
+
+    // references
+    // [1] http://stackoverflow.com/questions/17671252/d3-create-a-continous-color-scale-with-many-strings-inputs-for-the-range-and-dy
+    // [2] https://data.baltimorecity.gov/Neighborhoods/Crime-Safety-2010-2012-Shape/bywi-mtiu
+
+    </script>
+</body>

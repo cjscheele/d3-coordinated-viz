@@ -1,0 +1,14 @@
+.states {
+	fill-opacity: 0;
+    stroke: #CCC;
+    stroke-width: 0.5px;
+}
+
+.bins {
+	stroke: white;
+	fill:#F6E5D6;
+}
+
+.tracks {
+	stroke: steelblue;
+}
