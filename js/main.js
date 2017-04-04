@@ -25,10 +25,10 @@ function setMap(){
 
     //create Albers equal area conic projection
     var projection = d3.geoAlbers()
-        .center([5.45, 39.96])
+        .center([-2.75, 39.96])
         .rotate([93.73, 0.91, 0])
         .parallels([35.68, 45.50])
-        .scale(980)
+        .scale(900)
         .translate([width / 2, height / 2]);
 
     var path = d3.geoPath()
@@ -167,35 +167,38 @@ function setStateOverlay(states_topo, map, path){
 function setChart(csvData){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.425,
-        chartHeight = 560;
+        chartHeight = 460;
 
+    var formatter = d3.format("");
 
-    //create a second svg element to hold the bar chart
-    var chart = d3.select("body")
-        .append("svg")
-        .attr("width", chartWidth)
-        .attr("height", chartHeight)
-        .attr("class", "chart");
+    // set the dimensions and margins of the graph
+	var margin = {top: 25, right: 20, bottom: 50, left: 70},
+	    width = chartWidth - margin.left - margin.right,
+	    height = chartHeight - margin.top - margin.bottom;
 
-    var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = +chart.attr("width") - margin.left - margin.right,
-    height = +chart.attr("height") - margin.top - margin.bottom,
-    g = chart.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	var chart = d3.select("body").append("svg")
+	    .attr("width", width + margin.left + margin.right)
+	    .attr("height", height + margin.top + margin.bottom)
+	    .attr("class", "chart")
+	  .append("g")
+	    .attr("transform",
+	        "translate(" + margin.left + "," + margin.top + ")");
 
     // set the ranges
-    var x = d3.scaleLinear().range([0, chartWidth]);
-    var y = d3.scaleLinear().range([chartHeight, 0]);
+    var x = d3.scaleLinear().range([0, width]);
+    var y = d3.scaleLinear().range([height, 0]);
 
     // define the line
     var valueline = d3.line()
         .x(function(d) { return x(d.year); })
         .y(function(d) { return y(d.total); });
         console.log(d3.max(csvData, function(d) { return d.total; }));
+
     // Scale the range of the data
     x.domain([1950,2015]);
     y.domain([0, 1799]);
 
-    // Add the valueline path.
+    // Add the value line path.
     chart.append("path")
         .data([csvData])
         .attr("class", "line")
@@ -204,19 +207,39 @@ function setChart(csvData){
         .attr('stroke-width', 2)
         .attr('fill', 'none');
 
-    g.append("g")
-      .attr("transform", "translate(0," + height + ")")
-      .call(d3.axisBottom(x))
-    .select(".domain")
-      .remove();
+	// Add the x Axis
+	chart.append("g")
+	    .attr("transform", "translate(0," + height + ")")
+	    .call(d3.axisBottom(x));
 
-  g.append("g")
-      .call(d3.axisLeft(y))
-    .append("text")
-      .attr("fill", "#000")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", "0.71em");
+	// text label for the x axis
+	chart.append("text")             
+	    .attr("transform",
+	            "translate(" + (width/2) + " ," + 
+	                (height + margin.top + 20) + ")")
+	    .style("text-anchor", "middle")
+	    .text("Date");
+
+	// Add the y Axis
+	chart.append("g")
+	    .call(d3.axisLeft(y));
+
+	// text label for the y axis
+	chart.append("text")
+	  	.attr("transform", "rotate(-90)")
+	    .attr("y", 0 - margin.left)
+	    .attr("x",0 - (height / 2))
+	    .attr("dy", "1em")
+	    .style("text-anchor", "middle")
+	    .text("Frequency");  
+
+	//Add title
+	chart.append("text")
+        .attr("x", (width / 2))             
+        .attr("y", 0 - (margin.top / 2))
+        .attr("text-anchor", "middle")  
+        .style("font-size", "16px")   
+        .text("Tornado Occurences 1950-2015");
 };
 
 })();
