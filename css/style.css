@@ -1,6 +1,6 @@
 .states {
 	fill-opacity: 0;
-    stroke: #CCC;
+    stroke: #666666;
     stroke-width: 0.5px;
 }
 
@@ -9,6 +9,24 @@
 	fill:#F6E5D6;
 }
 
-.tracks {
-	stroke: steelblue;
+.map {
+    border: medium solid #999;
+    margin: 10px 0 0 20px;
+}
+
+.chart {
+    background-color: rgba(128,128,128,.2);
+    border: medium solid #999;
+    float: right;
+    margin: 10px 20px 0 0;
+}
+
+.axis path {
+    fill: none;
+    stroke: #777;
+    shape-rendering: crispEdges;
+}
+.axis text {
+    font-family: Lato;
+    font-size: 13px;
 }
