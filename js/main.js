@@ -2,7 +2,7 @@
 (function(){
 
 //variables for data join
-var attrArray = ["total", "mag0", "mag1", "mag2", "mag3","mag4","mag5","inj","fat","loss","closs","len","wid","mobile","time"];
+var attrArray = ["total", "mag0", "mag1", "mag2", "mag3","mag4","mag5","inj","fat"];
 
 var expressed = attrArray[0]; //initial attribute
 
@@ -53,13 +53,17 @@ function setMap(){
         var colorScale = makeColorScale(csvData);
 
         //Generate map
-        setEnumerationUnits(hexbins_topo, map, path, colorScale);
         setStateOverlay(states_topo, map, path);
-
+        setEnumerationUnits(hexbins_topo, map, path, colorScale);
+        
         //add coordinated visualization to the map
         setChart(statsData);
+
+        //Add dropdown
+        createDropdown(csvData);
         
     };
+
 };
 
 function joinData(hexbins_topo, csvData){
@@ -147,12 +151,81 @@ function setEnumerationUnits(hexbins_topo, map, path, colorScale){
             .enter()
             .append("path")
             .attr("class", function(d){
-                return "bins " + d.properties.grid_id;
+                return "bins " + d.properties.GRID_ID;
             })
             .attr("d", path)
             .style("fill", function(d){
-                return choropleth(d.properties, colorScale);
-            });
+                return choropleth(d.properties, colorScale)
+            })
+            .on("mouseover", function(d){
+                highlight(d.properties);
+            })
+            .on("mouseout", function(d){
+                dehighlight(d.properties)
+            })
+            .on("mousemove", moveLabel);
+
+        var desc = bins.append("desc")
+            .text('{"stroke": "white", "stroke-width": "0.5px","stroke-opacity": "0.65"}');
+};
+
+//function to highlight enumeration units and bars
+function highlight(props){
+    //change stroke
+    var selected = d3.selectAll("." + props.GRID_ID)
+        .style("stroke", "blue")
+        .style("stroke-width", "1")
+        .style("stroke-opacity", "1");
+
+    //call set label
+    setLabel(props);
+};
+
+//function to reset the element style on mouseout
+function dehighlight(props){
+    var selected = d3.selectAll("." + props.GRID_ID)
+        .style("stroke", function(){
+            return getStyle(this, "stroke")
+        })
+        .style("stroke-width", function(){
+            return getStyle(this, "stroke-width")
+        });
+
+    d3.select(".infolabel")
+        .remove();
+
+    function getStyle(element, styleName){
+        var styleText = d3.select(element)
+            .select("desc")
+            .text();
+
+        var styleObject = JSON.parse(styleText);
+
+        return styleObject[styleName];
+    };
+};
+
+function moveLabel(){
+    //get width of label
+    var labelWidth = d3.select(".infolabel")
+        .node()
+        .getBoundingClientRect()
+        .width;
+
+    //use coordinates of mousemove event to set label coordinates
+    var x1 = d3.event.clientX + 10,
+        y1 = d3.event.clientY - 75,
+        x2 = d3.event.clientX - labelWidth - 10,
+        y2 = d3.event.clientY + 25;
+
+    //horizontal label coordinate, testing for overflow
+    var x = d3.event.clientX > window.innerWidth - labelWidth - 20 ? x2 : x1; 
+    //vertical label coordinate, testing for overflow
+    var y = d3.event.clientY < 75 ? y2 : y1; 
+
+    d3.select(".infolabel")
+        .style("left", x + "px")
+        .style("top", y + "px");
 };
 
 //add states to map
@@ -180,8 +253,8 @@ function setChart(csvData){
 	    .attr("width", width + margin.left + margin.right)
 	    .attr("height", height + margin.top + margin.bottom)
 	    .attr("class", "chart")
-	  .append("g")
-	    .attr("transform",
+	    .append("g")
+	       .attr("transform",
 	        "translate(" + margin.left + "," + margin.top + ")");
 
     // set the ranges
@@ -192,7 +265,7 @@ function setChart(csvData){
     var valueline = d3.line()
         .x(function(d) { return x(d.year); })
         .y(function(d) { return y(d.total); });
-        console.log(d3.max(csvData, function(d) { return d.total; }));
+        //console.log(d3.max(csvData, function(d) { return d.total; }));
 
     // Scale the range of the data
     x.domain([1950,2015]);
@@ -240,6 +313,60 @@ function setChart(csvData){
         .attr("text-anchor", "middle")  
         .style("font-size", "16px")   
         .text("Tornado Occurences 1950-2015");
+};
+
+//function to create a dropdown menu for attribute selection
+function createDropdown(csvData){
+    //add select element
+    var dropdown = d3.select("body")
+        .append("select")
+        .attr("class", "dropdown")
+        .on("change", function(){
+            changeAttribute(this.value, csvData)
+        });
+
+    //add initial option
+    var titleOption = dropdown.append("option")
+        .attr("class", "titleOption")
+        .attr("disabled", "true")
+        .text("Select Attribute");
+
+    //add attribute name options
+    var attrOptions = dropdown.selectAll("attrOptions")
+        .data(attrArray)
+        .enter()
+        .append("option")
+        .attr("value", function(d){ return d })
+        .text(function(d){ return d });
+};
+
+//dropdown change listener handler
+function changeAttribute(attribute, csvData){
+    //change the expressed attribute
+    expressed = attribute;
+
+    //recreate the color scale
+    var colorScale = makeColorScale(csvData);
+
+    //recolor enumeration units
+    var regions = d3.selectAll(".bins")
+        .style("fill", function(d){
+            return choropleth(d.properties, colorScale)
+        });
+};
+
+//function to create dynamic label
+function setLabel(props){
+    //label content
+    var labelAttribute = "<h1>" + props[expressed] +
+        "</h1><b>" + expressed + "</b>";
+
+    //create info label div
+    var infolabel = d3.select("body")
+        .append("div")
+        .attr("class", "infolabel")
+        .attr("id", props.GRID_ID + "_label")
+        .html(labelAttribute);
 };
 
 })();
