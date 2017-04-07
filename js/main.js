@@ -6,6 +6,20 @@ var attrArray = ["total", "mag0", "mag1", "mag2", "mag3","mag4","mag5","inj","fa
 
 var expressed = attrArray[0]; //initial attribute
 
+//y-max cales for the chart
+//var scales = {'total':[1799,17],'mag0':[1202,16],'mag1':[614,11],'mag2':[301,6],'mag3':[95,4],'mag4':[30,3],'mag5':[7,2],'inj':[6822,1588],'fat':[553,158]}
+var scales = {'total':[1800,20],'mag0':[1250,20],'mag1':[650,20],'mag2':[350,10],'mag3':[100,10],'mag4':[40,10],'mag5':[10,10],'inj':[6850,1590],'fat':[600,160]}
+
+
+//Used for holding the current csv data
+var currStats;
+
+//Chart, x and y
+var x,y;
+
+// define the line
+var valueline;
+
 //begin script when window loads
 window.onload = setMap();
 
@@ -37,16 +51,17 @@ function setMap(){
     //use d3.queue to parallelize asynchronous data loading
     d3.queue()
         .defer(d3.csv, "data/tordata.csv") //load attributes from csv
-        .defer(d3.csv, "data/sumstats.csv") //load attributes from stats csv
+        .defer(d3.csv, "data/total.csv") //load attributes for stats csv
         .defer(d3.json, "data/states.topojson") //load background spatial data
         .defer(d3.json, "data/hexbins.topojson") //load choropleth spatial data
         .await(callback);
 
-    function callback(error,csvData,statsData,states,hexbins){
+    function callback(error,csvData,sumStatsData,states,hexbins){
         //Translate the topojson
         var states_topo = topojson.feature(states, states.objects.collection);
         var hexbins_topo = topojson.feature(hexbins,hexbins.objects.collection).features;
-
+        
+        //Join csv to hexbins
         hexbins_topo = joinData(hexbins_topo, csvData);
 
         //create the color scale
@@ -57,10 +72,11 @@ function setMap(){
         setEnumerationUnits(hexbins_topo, map, path, colorScale);
         
         //add coordinated visualization to the map
-        setChart(statsData);
+        currStats = sumStatsData;
+        setChart(currStats,"total");
 
         //Add dropdown
-        createDropdown(csvData);
+        createDropdown(csvData,currStats);
         
     };
 
@@ -99,8 +115,8 @@ function joinData(hexbins_topo, csvData){
 //function to create color scale generator
 function makeColorScale(data){
     var colorClasses = [
-        "#feedde",
-        "#fdbe85",
+        "#fdd0a2",
+        "#fdae6b",
         "#fd8d3c",
         "#e6550d",
         "#a63603"
@@ -108,7 +124,8 @@ function makeColorScale(data){
 
     //create color scale generator
     var colorScale = d3.scaleThreshold()
-        .range(colorClasses);
+        .range(colorClasses)
+
 
     //build array of all values of the expressed attribute
     var domainArray = [];
@@ -119,6 +136,7 @@ function makeColorScale(data){
 
     //cluster data using ckmeans clustering algorithm to create natural breaks
     var clusters = ss.ckmeans(domainArray, 5);
+    
     //reset domain array to cluster minimums
     domainArray = clusters.map(function(d){
         return d3.min(d);
@@ -129,8 +147,29 @@ function makeColorScale(data){
     //assign array of last 4 cluster minimums as domain
     colorScale.domain(domainArray);
 
+    legend(colorScale);
+
     return colorScale;
 };
+
+//Make legend
+function legend(colorScale){
+	var svg = d3.select("svg");
+
+	svg.append("g")
+	 	.attr("class", "legend")
+	  	.attr("transform", "translate(20,325)");
+
+	var legend = d3.legendColor()
+		.title(expressed)
+	    .labelFormat(d3.format("d"))
+	    .labels(d3.legendHelpers.thresholdLabels)
+	    .useClass(false)
+	    .scale(colorScale)
+
+	svg.select(".legend")
+		.call(legend);
+}
 
 //function to test for data value and return color
 function choropleth(props, colorScale){
@@ -179,6 +218,7 @@ function highlight(props){
 
     //call set label
     setLabel(props);
+    changeChart(expressed,props.GRID_ID,1,selected.style('fill'));
 };
 
 //function to reset the element style on mouseout
@@ -230,14 +270,14 @@ function moveLabel(){
 
 //add states to map
 function setStateOverlay(states_topo, map, path){
-        var states = map.append("path")
-            .datum(states_topo)
-            .attr("class", "states")
-            .attr("d", path);
+    var states = map.append("path")
+        .datum(states_topo)
+        .attr("class", "states")
+        .attr("d", path);
 };
 
 //function to create coordinated bar chart
-function setChart(csvData){
+function setChart(csvData,attr){
     //chart frame dimensions
     var chartWidth = window.innerWidth * 0.425,
         chartHeight = 460;
@@ -254,22 +294,21 @@ function setChart(csvData){
 	    .attr("height", height + margin.top + margin.bottom)
 	    .attr("class", "chart")
 	    .append("g")
-	       .attr("transform",
+	    	.attr("transform",
 	        "translate(" + margin.left + "," + margin.top + ")");
 
     // set the ranges
-    var x = d3.scaleLinear().range([0, width]);
-    var y = d3.scaleLinear().range([height, 0]);
+    x = d3.scaleLinear().range([0, width]);
+    y = d3.scaleLinear().range([height, 0]);
 
     // define the line
-    var valueline = d3.line()
+    valueline = d3.line()
         .x(function(d) { return x(d.year); })
         .y(function(d) { return y(d.total); });
-        //console.log(d3.max(csvData, function(d) { return d.total; }));
 
     // Scale the range of the data
     x.domain([1950,2015]);
-    y.domain([0, 1799]);
+    y.domain([0, scales[attr][0]]);
 
     // Add the value line path.
     chart.append("path")
@@ -282,8 +321,9 @@ function setChart(csvData){
 
 	// Add the x Axis
 	chart.append("g")
+		.attr("class", "xaxis")
 	    .attr("transform", "translate(0," + height + ")")
-	    .call(d3.axisBottom(x));
+	    .call(d3.axisBottom(x).tickFormat(d3.format("d")));
 
 	// text label for the x axis
 	chart.append("text")             
@@ -291,10 +331,11 @@ function setChart(csvData){
 	            "translate(" + (width/2) + " ," + 
 	                (height + margin.top + 20) + ")")
 	    .style("text-anchor", "middle")
-	    .text("Date");
+	    .text("Year");
 
 	// Add the y Axis
 	chart.append("g")
+		.attr("class", "yaxis")
 	    .call(d3.axisLeft(y));
 
 	// text label for the y axis
@@ -304,7 +345,7 @@ function setChart(csvData){
 	    .attr("x",0 - (height / 2))
 	    .attr("dy", "1em")
 	    .style("text-anchor", "middle")
-	    .text("Frequency");  
+	    .text("Count");  
 
 	//Add title
 	chart.append("text")
@@ -313,6 +354,22 @@ function setChart(csvData){
         .attr("text-anchor", "middle")  
         .style("font-size", "16px")   
         .text("Tornado Occurences 1950-2015");
+
+    //Add reset button
+    var button = d3.select("body")
+        .append("input")
+	        .attr("type","button")
+	        .attr("value","Total")
+	        .attr("class", "button")
+	        .attr("id","reset")
+	        .on("click", function(){
+	            resetChart();
+	        });
+};
+
+//Reset the chart to totals
+function resetChart(){
+	changeChart(expressed,"total",0,'blue');
 };
 
 //function to create a dropdown menu for attribute selection
@@ -321,6 +378,7 @@ function createDropdown(csvData){
     var dropdown = d3.select("body")
         .append("select")
         .attr("class", "dropdown")
+        .attr("id","attrDropdown")
         .on("change", function(){
             changeAttribute(this.value, csvData)
         });
@@ -341,9 +399,9 @@ function createDropdown(csvData){
 };
 
 //dropdown change listener handler
-function changeAttribute(attribute, csvData){
+function changeAttribute(attr, csvData){
     //change the expressed attribute
-    expressed = attribute;
+    expressed = attr;
 
     //recreate the color scale
     var colorScale = makeColorScale(csvData);
@@ -353,7 +411,37 @@ function changeAttribute(attribute, csvData){
         .style("fill", function(d){
             return choropleth(d.properties, colorScale)
         });
+    //Load new stats data
+    d3.csv("data/"+attr+".csv",function(data) {
+        currStats = data;
+
+        //update the chart
+        changeChart(attr,'total',0,'blue');
+    });
 };
+
+function changeChart(attr,col,scale,color){
+		// Scale the range of the data again 
+	    x.domain([1950,2015]);
+	    y.domain([0, scales[attr][scale]]);
+	    
+	    // Select the section we want to apply our changes to
+	    var svg = d3.select(".chart").transition();
+
+	    // define the line
+		valueline = d3.line()
+		    .x(function(d) { return x(d.year); })
+		    .y(function(d) { return y(d[col]); });
+	    // Make the changes
+	    svg.select(".line")   // change the line
+	        .duration(500)
+	        .attr("d", valueline(currStats,col))
+	        .attr('stroke', color);
+	    svg.select(".yaxis") // change the y axis
+	        .duration(500)
+	        .call(d3.axisLeft(y));
+    
+}
 
 //function to create dynamic label
 function setLabel(props){
