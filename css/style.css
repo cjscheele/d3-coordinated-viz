@@ -1,26 +1,96 @@
+#myBody {
+    font-family: Roboto;
+}
+
+#myBody a {
+    margin-left: 3px;
+    color: #323299; 
+}
+
+#myBody a:hover{
+    text-decoration:  none;
+    color:#000059;
+}
+
+#mapTitle {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    font-family: Relway;
+}
+
+#mapDescription {
+    word-wrap: break-word;
+    color:#2a2a2a;
+}
+
+.map {
+    margin: 10px 0 0 20px;
+}
+
 .states {
-	fill-opacity: 0;
+    fill-opacity: 0;
     stroke: #666666;
     stroke-width: 0.5px;
 }
 
 .bins {
-	stroke: white;
+    stroke: white;
     stroke-width: .5px;
     stroke-opacity:.65;
-	fill:#F6E5D6;
+    fill:#F6E5D6;
     opacity:.65;
 }
 
-.map {
-    border: medium solid #999;
-    margin: 10px 0 0 20px;
+#attrDropdown {
+    position: absolute;
+    top: 5px;
+    left: 40px;
+    z-index: 10;
+    font-size: 1em;
+    font-weight: bold;
+    padding: 2px;
+    border: 1px solid black;
+    border-radius: 5px;
+    box-shadow: 2px 2px 4px #999;
+}
+
+option {
+    font-weight: normal;
+}
+
+.infolabel {
+    position: absolute;
+    min-height: 25px;
+    min-width: 75px;
+    border: solid thin black;
+    border-radius: 10px;
+    color: black;
+    background-color: white;
+    opacity:0.75;
+    padding: 5px 10px;
+    top: -75px;
+}
+
+.infolabel h3 {
+    margin: 0 10px 0 0;
+    padding: 0;
+    display: inline-block;
+    line-height: 1em;
+}
+
+.legendTitle {
+    font-weight: bold;
 }
 
 .chart {
-    border: medium solid #999;
-    float: right;
     margin: 10px 20px 0 0;
+}
+
+#chartTitle {
+    font-weight: bold;
 }
 
 .axis path {
@@ -33,50 +103,31 @@
     font-size: 13px;
 }
 
-#attrDropdown {
-    position: absolute;
-    top: 30px;
-    left: 40px;
-    z-index: 10;
-    font-family: sans-serif;
-    font-size: 1em;
-    font-weight: bold;
-    padding: 2px;
-    border: 1px solid #999;
-    box-shadow: 2px 2px 4px #999;
-}
-
-option {
-    font-weight: normal;
-}
-
-.infolabel {
-    position: absolute;
-    height: 50px;
-    min-width: 100px;
-    color: #fff;
-    background-color: #000;
-    border: solid thin #fff;
-    padding: 5px 10px;
-    top: -75px;
-}
-
-.infolabel h1 {
-    margin: 0 20px 0 0;
-    padding: 0;
-    display: inline-block;
-    line-height: 1em;
-}
-
 #reset {
-    position: relative;
-    top: 100px;
-    left: 40px;
+    position:absolute;
+    top:5px;
+    right:20px;
     z-index: 10;
-    font-family: sans-serif;
     font-size: 1em;
     font-weight: bold;
     padding: 2px;
     border: 1px solid #999;
     box-shadow: 2px 2px 4px #999;
+    background-color:white;
+    border-radius: 5px;
+    margin-top: 1px;
+    margin-right: 2px;
+}
+
+#reset:hover {
+    background-color:black;
+    color:white;
+}
+
+#myFooter {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
 }

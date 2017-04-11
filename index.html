@@ -6,12 +6,27 @@
 		<title>Tornado Alley</title>
 		<link rel="icon" href="/images/tornado.png">
 		<link rel="stylesheet" href="css/style.css">
+		<link href="https://fonts.googleapis.com/css?family=Raleway|Roboto" rel="stylesheet">
 		<link rel="stylesheet" href="css/bootstrap.min.css">
 	</head>
 
-	<body>
-		<div id='mydiv'></div>
-		<!-- Phil Dziedzic -->
+	<body id='myBody'>
+		<div class="container-fluid">
+			<div class="row">
+				<div id="mapTitle" class="col-lg-12"><h1><strong><i>Finding Tornado Alley</i></strong></h1></div>
+			</div>
+			<div class="row">
+				<div id="mapDescription" class="col-sm-12 col-md-8 col-md-offset-2 col-lg-8 col-lg-offset-2"><p>Tornado alley, a nickname given to a region with a disproportionately high frequency of tornadoes, is commonly thought to exist in the southern plains. However, there is no consensus on the exact boundary of this region. Since the 1950’s, the National Weather Service (NWS) has collected data on the location, severity, and impact of most tornadoes in the contiguous United States. Currently, the strength of a tornado is measured using the <a href="http://www.spc.noaa.gov/efscale/" target="_blank">Enhanced Fujita Scale (EF)</a>. This map aggregates the NWS tornado track data from 1950-2015 into hexbins. Explore the attribute, spatial, and temporal patterns to find tornado alley.</p><hr></div>
+			</div>
+    		<div class="row">
+    			<div id="mapWindow" class="col-sm-12 col-md-10 col-md-offset-1 col-lg-6 col-lg-offset-0"><div id="map"></div></div>
+    			<div id="panelWindow" class="col-sm-12 col-md-10 col-md-offset-1 col-lg-6 col-lg-offset-0"><div id="chart"></div></div>	
+        	</div>
+        	<div class="row">
+        		<footer id="myFooter" class="col-lg-12">Map by Chris Scheele, tornado graphic by Phil Dziedzic, and data from <a href="http://www.spc.noaa.gov/gis/svrgis/" target="_blank">NOAA</a></footer>
+        	</div>
+		</div>
+		
 		<script type="text/javascript" src="lib/jquery-3.1.1.js"></script>
 		<script type="text/javascript" src="lib/bootstrap.min.js"></script>
 		<script type="text/javascript" src="lib/d3.min.js"></script>

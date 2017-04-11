@@ -2,14 +2,14 @@
 (function(){
 
 //variables for data join
-var attrArray = ["total", "mag0", "mag1", "mag2", "mag3","mag4","mag5","inj","fat"];
+var attrArrayData = ["total", "mag0", "mag1", "mag2", "mag3","mag4","mag5","inj","fat"];
+var attrArray = [["total","All"], ["mag0","EF0"],["mag1","EF1"], ["mag2","EF2"], ["mag3","EF3"],["mag4","EF4"],["mag5","EF5"],["inj","Injuries"],["fat","Fatalities"]];
 
-var expressed = attrArray[0]; //initial attribute
+var expressed = attrArray[0][0]; //initial attribute
+var expressedDisp = attrArray[0][1];
 
 //y-max cales for the chart
-//var scales = {'total':[1799,17],'mag0':[1202,16],'mag1':[614,11],'mag2':[301,6],'mag3':[95,4],'mag4':[30,3],'mag5':[7,2],'inj':[6822,1588],'fat':[553,158]}
 var scales = {'total':[1800,20],'mag0':[1250,20],'mag1':[650,20],'mag2':[350,10],'mag3':[100,10],'mag4':[40,10],'mag5':[10,10],'inj':[6850,1590],'fat':[600,160]}
-
 
 //Used for holding the current csv data
 var currStats;
@@ -27,11 +27,11 @@ window.onload = setMap();
 function setMap(){
 
     //map frame dimensions
-    var width = window.innerWidth * 0.5,
+    var width = $("#mapWindow").innerWidth(),
         height = 460;
 
     //create new svg container for the map
-    var map = d3.select("body")
+    var map = d3.select("#mapWindow")
         .append("svg")
         .attr("class", "map")
         .attr("width", width)
@@ -39,10 +39,10 @@ function setMap(){
 
     //create Albers equal area conic projection
     var projection = d3.geoAlbers()
-        .center([-2.75, 39.96])
+        .center([-0.8, 39.96])
         .rotate([93.73, 0.91, 0])
         .parallels([35.68, 45.50])
-        .scale(900)
+        .scale(880)
         .translate([width / 2, height / 2]);
 
     var path = d3.geoPath()
@@ -76,12 +76,11 @@ function setMap(){
         setChart(currStats,"total");
 
         //Add dropdown
-        createDropdown(csvData,currStats);
-        
+        createDropdown(csvData,currStats);        
     };
-
 };
 
+//Join bins and csv
 function joinData(hexbins_topo, csvData){
     //loop through csv to assign each set of csv attribute values to geojson bin
         for (var i=0; i<csvData.length; i++){
@@ -98,7 +97,7 @@ function joinData(hexbins_topo, csvData){
                 if (geojsonKey == csvKey){
 
                     //assign all attributes and values
-                    attrArray.forEach(function(attr){
+                    attrArrayData.forEach(function(attr){
                         if (attr == "time"){ //handle json object
                             var val = JSON.parse(JSON.stringify(csvBin[attr]));
                         }else{
@@ -126,7 +125,6 @@ function makeColorScale(data){
     var colorScale = d3.scaleThreshold()
         .range(colorClasses)
 
-
     //build array of all values of the expressed attribute
     var domainArray = [];
     for (var i=0; i<data.length; i++){
@@ -147,6 +145,7 @@ function makeColorScale(data){
     //assign array of last 4 cluster minimums as domain
     colorScale.domain(domainArray);
 
+    //create legend
     legend(colorScale);
 
     return colorScale;
@@ -161,7 +160,7 @@ function legend(colorScale){
 	  	.attr("transform", "translate(20,325)");
 
 	var legend = d3.legendColor()
-		.title(expressed)
+		.title(expressedDisp)
 	    .labelFormat(d3.format("d"))
 	    .labels(d3.legendHelpers.thresholdLabels)
 	    .useClass(false)
@@ -212,7 +211,7 @@ function setEnumerationUnits(hexbins_topo, map, path, colorScale){
 function highlight(props){
     //change stroke
     var selected = d3.selectAll("." + props.GRID_ID)
-        .style("stroke", "blue")
+        .style("stroke", "#000080")
         .style("stroke-width", "1")
         .style("stroke-opacity", "1");
 
@@ -279,7 +278,7 @@ function setStateOverlay(states_topo, map, path){
 //function to create coordinated bar chart
 function setChart(csvData,attr){
     //chart frame dimensions
-    var chartWidth = window.innerWidth * 0.425,
+    var chartWidth = window.innerWidth * 0.47,
         chartHeight = 460;
 
     var formatter = d3.format("");
@@ -289,7 +288,7 @@ function setChart(csvData,attr){
 	    width = chartWidth - margin.left - margin.right,
 	    height = chartHeight - margin.top - margin.bottom;
 
-	var chart = d3.select("body").append("svg")
+	var chart = d3.select("#panelWindow").append("svg")
 	    .attr("width", width + margin.left + margin.right)
 	    .attr("height", height + margin.top + margin.bottom)
 	    .attr("class", "chart")
@@ -315,7 +314,7 @@ function setChart(csvData,attr){
         .data([csvData])
         .attr("class", "line")
         .attr("d", valueline)
-        .attr('stroke', 'green')
+        .attr('stroke', '#000080')
         .attr('stroke-width', 2)
         .attr('fill', 'none');
 
@@ -349,17 +348,18 @@ function setChart(csvData,attr){
 
 	//Add title
 	chart.append("text")
+        .attr("id","chartTitle")
         .attr("x", (width / 2))             
         .attr("y", 0 - (margin.top / 2))
         .attr("text-anchor", "middle")  
         .style("font-size", "16px")   
-        .text("Tornado Occurences 1950-2015");
+        .text(expressedDisp+" 1950-2015");
 
     //Add reset button
-    var button = d3.select("body")
+    var button = d3.select("#panelWindow")
         .append("input")
 	        .attr("type","button")
-	        .attr("value","Total")
+	        .attr("value","Reset")
 	        .attr("class", "button")
 	        .attr("id","reset")
 	        .on("click", function(){
@@ -369,18 +369,18 @@ function setChart(csvData,attr){
 
 //Reset the chart to totals
 function resetChart(){
-	changeChart(expressed,"total",0,'blue');
+	changeChart(expressed,"total",0,'#000080');
 };
 
 //function to create a dropdown menu for attribute selection
 function createDropdown(csvData){
     //add select element
-    var dropdown = d3.select("body")
+    var dropdown = d3.select("#mapWindow")
         .append("select")
         .attr("class", "dropdown")
         .attr("id","attrDropdown")
         .on("change", function(){
-            changeAttribute(this.value, csvData)
+            changeAttribute(this.value,$("#attrDropdown option[value='"+this.value+"']").text(),csvData)
         });
 
     //add initial option
@@ -394,14 +394,16 @@ function createDropdown(csvData){
         .data(attrArray)
         .enter()
         .append("option")
-        .attr("value", function(d){ return d })
-        .text(function(d){ return d });
+        .attr("value", function(d){ return d[0] })
+        .attr("name", function(d){ return d[1] })
+        .text(function(d){ return d[1] });
 };
 
 //dropdown change listener handler
-function changeAttribute(attr, csvData){
+function changeAttribute(attr,name, csvData){
     //change the expressed attribute
     expressed = attr;
+    expressedDisp = name;
 
     //recreate the color scale
     var colorScale = makeColorScale(csvData);
@@ -416,7 +418,7 @@ function changeAttribute(attr, csvData){
         currStats = data;
 
         //update the chart
-        changeChart(attr,'total',0,'blue');
+        changeChart(attr,'total',0,'#000080');
     });
 };
 
@@ -440,14 +442,14 @@ function changeChart(attr,col,scale,color){
 	    svg.select(".yaxis") // change the y axis
 	        .duration(500)
 	        .call(d3.axisLeft(y));
-    
+        svg.select("#chartTitle") //change title
+            .text(expressedDisp+" 1950-2015");    
 }
 
 //function to create dynamic label
 function setLabel(props){
     //label content
-    var labelAttribute = "<h1>" + props[expressed] +
-        "</h1><b>" + expressed + "</b>";
+    var labelAttribute = "<h3>" + props[expressed] + "</h3><b>total</b>";
 
     //create info label div
     var infolabel = d3.select("body")
@@ -456,5 +458,4 @@ function setLabel(props){
         .attr("id", props.GRID_ID + "_label")
         .html(labelAttribute);
 };
-
 })();
